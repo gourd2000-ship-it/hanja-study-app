@@ -433,9 +433,17 @@ const ManagementMode = ({ progress, onReset, onSetLevel, onJump }: any) => {
 
 function App() {
   const [mode, setMode] = useState<'learn' | 'quiz' | 'manage'>('manage');
-  const { progress, getTodayWords, completeStudy, addWeakness, resetProgress, setLevel, jumpToDay, getCurrentDate, isStudyDay } = useStudy();
+  const { progress, getTodayWords, completeStudy, addWeakness, resetProgress, setLevel, getCurrentDate, isStudyDay } = useStudy();
 
-  const todayData = getTodayWords();
+  // Track which day is currently being viewed/studied
+  const [activeDay, setActiveDay] = useState(progress.currentStudyDay);
+
+  // Sync activeDay when the official progress advances
+  useEffect(() => {
+    setActiveDay(progress.currentStudyDay);
+  }, [progress.currentStudyDay]);
+
+  const todayData = getTodayWords(activeDay);
   const currentDate = getCurrentDate();
 
   return (
@@ -473,9 +481,9 @@ function App() {
                 ...todayData.new.map((w: any) => ({ ...w, learningType: 'new' })),
                 ...todayData.review.map((w: any) => ({ ...w, learningType: 'review' }))
               ]}
-              studyDay={progress.currentStudyDay}
+              studyDay={activeDay}
               onComplete={() => {
-                completeStudy('learn');
+                completeStudy('learn', activeDay);
                 setMode('quiz');
               }}
             />
@@ -492,7 +500,7 @@ function App() {
             <QuizMode
               todayData={todayData}
               onExit={() => {
-                completeStudy('quiz');
+                completeStudy('quiz', activeDay);
                 setMode('manage');
               }}
               onWrong={(id: number) => addWeakness(id)}
@@ -505,7 +513,7 @@ function App() {
             onReset={resetProgress}
             onSetLevel={setLevel}
             onJump={(day: number) => {
-              jumpToDay(day);
+              setActiveDay(day);
               setMode('learn');
             }}
           />

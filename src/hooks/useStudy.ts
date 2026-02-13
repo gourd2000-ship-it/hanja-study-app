@@ -107,11 +107,11 @@ export const useStudy = () => {
         return day !== 0 && day !== 6;
     };
 
-    const getTodayWords = () => {
+    const getTodayWords = (day?: number) => {
         const levelData = getCurrentLevelData();
-        const studyDay = levelData.currentStudyDay;
+        const studyDay = day || levelData.currentStudyDay;
         const schedule = STUDY_SCHEDULE.find(s => s.day === studyDay);
-        if (!schedule) return { new: [], review: [], extraMix: [], schedule: null };
+        if (!schedule) return { new: [], review: [], extraMix: [], schedule: null, currentStudyDay: studyDay };
 
         let levelHanja: Hanja[] = [];
         if (progress.selectedLevel === '8급') levelHanja = hanjaData.slice(0, 50);
@@ -153,16 +153,17 @@ export const useStudy = () => {
 
         const extraMix = [...weakPool, ...randomPool.sort(() => Math.random() - 0.5)].slice(0, Math.max(0, schedule.review - baseReviewWords.length + schedule.extra));
 
-        return { new: newWords, review: baseReviewWords, extraMix, schedule, currentStudyDay: studyDay };
+        return { new: newWords, review: baseReviewWords, extraMix, schedule, studyDay };
     };
 
-    const completeStudy = (type: 'learn' | 'quiz') => {
+    const completeStudy = (type: 'learn' | 'quiz', day: number) => {
         const todayStr = getCurrentDate().toISOString().split('T')[0];
 
         setProgress(prev => {
             const currentLv = prev.selectedLevel;
             const lvData = prev.levels[currentLv];
-            const studyDay = lvData.currentStudyDay;
+            const studyDay = day;
+            const progressDay = lvData.currentStudyDay;
 
             const existingIdx = lvData.dailyQuests.findIndex(q => q.studyDay === studyDay);
             let newQuests = [...lvData.dailyQuests];
@@ -182,7 +183,7 @@ export const useStudy = () => {
                 });
             }
 
-            // Only advance day if both are done
+            // Only advance day if both are done AND it's the current progress day
             const targetQuest = newQuests.find(q => q.studyDay === studyDay);
             const shouldAdvance = targetQuest?.learned && targetQuest?.quizDone;
 
@@ -193,7 +194,7 @@ export const useStudy = () => {
                     [currentLv]: {
                         ...lvData,
                         dailyQuests: newQuests,
-                        currentStudyDay: shouldAdvance ? Math.min(20, studyDay + 1) : studyDay
+                        currentStudyDay: (shouldAdvance && studyDay === progressDay) ? Math.min(20, progressDay + 1) : progressDay
                     }
                 }
             };
@@ -237,21 +238,6 @@ export const useStudy = () => {
         }));
     };
 
-    const jumpToDay = (day: number) => {
-        setProgress(prev => {
-            const currentLv = prev.selectedLevel;
-            return {
-                ...prev,
-                levels: {
-                    ...prev.levels,
-                    [currentLv]: {
-                        ...prev.levels[currentLv],
-                        currentStudyDay: day
-                    }
-                }
-            };
-        });
-    };
 
     return {
         progress: {
@@ -265,7 +251,6 @@ export const useStudy = () => {
         addWeakness,
         resetProgress,
         setLevel,
-        jumpToDay,
         getCurrentDate,
         isStudyDay
     };
