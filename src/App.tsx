@@ -379,7 +379,7 @@ const SetupMode = ({ onComplete }: any) => {
   );
 };
 
-const ManagementMode = ({ progress, onReset, onSetLevel, onJump, onFullReset }: any) => {
+const ManagementMode = ({ progress, onSetLevel, onJump, onFullReset }: any) => {
   return (
     <div className="fade-in">
       <div className="card">
