@@ -237,6 +237,22 @@ export const useStudy = () => {
         }));
     };
 
+    const jumpToDay = (day: number) => {
+        setProgress(prev => {
+            const currentLv = prev.selectedLevel;
+            return {
+                ...prev,
+                levels: {
+                    ...prev.levels,
+                    [currentLv]: {
+                        ...prev.levels[currentLv],
+                        currentStudyDay: day
+                    }
+                }
+            };
+        });
+    };
+
     return {
         progress: {
             ...progress,
@@ -249,6 +265,7 @@ export const useStudy = () => {
         addWeakness,
         resetProgress,
         setLevel,
+        jumpToDay,
         getCurrentDate,
         isStudyDay
     };

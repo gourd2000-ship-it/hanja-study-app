@@ -215,15 +215,20 @@ const QuizMode = ({ todayData, onExit, onWrong }: any) => {
     const extraQs = createQuestions(extraMix, extraMix.length);
 
     // 2. Round-Robin / 교차 출제 Logic
-    // Interleave them so same character doesn't appear consecutively
-    let allQs = [...newQs, ...reviewQs, ...extraQs];
+    // If we have new words, force first 3 questions to be from the NEW pool (basic type)
     let interleaved: any[] = [];
 
-    // Simple interleaving: take one from each non-empty pool until done
-    const pools = [newQs, reviewQs, extraQs].filter(p => p.length > 0);
-    let poolIndices = pools.map(() => 0);
+    const newBasicQs = newQs.filter(q => q.type === 'basic');
+    const firstThreeNew = newBasicQs.slice(0, 3);
+    const firstThreeIds = new Set(firstThreeNew.map(q => q.hanja.id));
 
-    while (interleaved.length < allQs.length) {
+    // Simple interleaving for the rest
+    const otherNew = newQs.filter(q => !firstThreeIds.has(q.hanja.id));
+    const pools = [otherNew, reviewQs, extraQs].filter(p => p.length > 0);
+    let poolIndices = pools.map(() => 0);
+    const totalRemaining = pools.reduce((acc, p) => acc + p.length, 0);
+
+    while (interleaved.length < totalRemaining) {
       for (let i = 0; i < pools.length; i++) {
         if (poolIndices[i] < pools[i].length) {
           interleaved.push(pools[i][poolIndices[i]]);
@@ -232,7 +237,7 @@ const QuizMode = ({ todayData, onExit, onWrong }: any) => {
       }
     }
 
-    setSession({ questions: interleaved });
+    setSession({ questions: [...firstThreeNew, ...interleaved] });
   }, [todayData]);
 
   if (!todayData || !todayData.schedule) return <div>준비 중...</div>;
@@ -316,7 +321,7 @@ const QuizMode = ({ todayData, onExit, onWrong }: any) => {
   );
 };
 
-const ManagementMode = ({ progress, onReset, onSetLevel }: any) => {
+const ManagementMode = ({ progress, onReset, onSetLevel, onJump }: any) => {
   return (
     <div className="fade-in">
       <div className="card">
@@ -365,19 +370,30 @@ const ManagementMode = ({ progress, onReset, onSetLevel }: any) => {
               color = 'var(--primary)';
             }
 
+            const isAvailable = isCurrent || !!quest;
+
             return (
-              <div key={i} style={{
-                aspectRatio: '1/1',
-                background: bg,
-                borderRadius: '8px',
-                border,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                color
-              }}>
+              <div key={i}
+                onClick={() => isAvailable && onJump(dayNum)}
+                style={{
+                  aspectRatio: '1/1',
+                  background: bg,
+                  borderRadius: '8px',
+                  border,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  color,
+                  cursor: isAvailable ? 'pointer' : 'default',
+                  transition: 'transform 0.2s, opacity 0.2s',
+                  boxShadow: isAvailable ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                  opacity: isAvailable ? 1 : 0.4
+                }}
+                onMouseEnter={(e) => isAvailable && (e.currentTarget.style.transform = 'scale(1.05)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+              >
                 D{dayNum}
                 {quest && (
                   <div style={{ position: 'absolute', bottom: '2px', fontSize: '8px', width: '100%', textAlign: 'center' }}>
@@ -417,7 +433,7 @@ const ManagementMode = ({ progress, onReset, onSetLevel }: any) => {
 
 function App() {
   const [mode, setMode] = useState<'learn' | 'quiz' | 'manage'>('manage');
-  const { progress, getTodayWords, completeStudy, addWeakness, resetProgress, setLevel, getCurrentDate, isStudyDay } = useStudy();
+  const { progress, getTodayWords, completeStudy, addWeakness, resetProgress, setLevel, jumpToDay, getCurrentDate, isStudyDay } = useStudy();
 
   const todayData = getTodayWords();
   const currentDate = getCurrentDate();
@@ -488,6 +504,10 @@ function App() {
             progress={progress}
             onReset={resetProgress}
             onSetLevel={setLevel}
+            onJump={(day: number) => {
+              jumpToDay(day);
+              setMode('learn');
+            }}
           />
         )}
       </main>
