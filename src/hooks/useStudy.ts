@@ -238,6 +238,32 @@ export const useStudy = () => {
         }));
     };
 
+    const updateUserName = (name: string) => {
+        setProgress(prev => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                userName: name
+            }
+        }));
+    };
+
+    const fullReset = () => {
+        setProgress({
+            levels: {
+                '8급': createLevelTemplate(),
+                '7급A': createLevelTemplate(),
+                '7급B': createLevelTemplate()
+            },
+            settings: {
+                dailyCount: 5,
+                studyDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                userName: '학생',
+            },
+            selectedLevel: '8급'
+        });
+    };
+
 
     return {
         progress: {
@@ -251,6 +277,8 @@ export const useStudy = () => {
         addWeakness,
         resetProgress,
         setLevel,
+        updateUserName,
+        fullReset,
         getCurrentDate,
         isStudyDay
     };

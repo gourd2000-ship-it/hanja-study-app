@@ -321,7 +321,65 @@ const QuizMode = ({ todayData, onExit, onWrong }: any) => {
   );
 };
 
-const ManagementMode = ({ progress, onReset, onSetLevel, onJump }: any) => {
+const SetupMode = ({ onComplete }: any) => {
+  const [name, setName] = useState('');
+
+  const handleStart = () => {
+    if (name.trim()) {
+      onComplete(name.trim());
+    } else {
+      alert('이름을 입력해 주세요!');
+    }
+  };
+
+  return (
+    <div className="fade-in" style={{
+      height: '80vh',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      textAlign: 'center',
+      padding: '20px'
+    }}>
+      <div style={{ fontSize: '60px', marginBottom: '20px' }}>👋</div>
+      <h2 style={{ marginBottom: '10px' }}>환영합니다!</h2>
+      <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>학습을 시작하기 전에 이름을 알려주세요.</p>
+
+      <div style={{ width: '100%', maxWidth: '300px' }}>
+        <input
+          type="text"
+          placeholder="이름 (예: 홍길동)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '15px',
+            borderRadius: '12px',
+            border: '2px solid #e2e8f0',
+            fontSize: '18px',
+            marginBottom: '20px',
+            textAlign: 'center',
+            outline: 'none'
+          }}
+          onKeyPress={(e) => e.key === 'Enter' && handleStart()}
+        />
+        <button
+          className="btn btn-primary"
+          style={{ width: '100%', height: '50px', fontSize: '18px' }}
+          onClick={handleStart}
+        >
+          학습 시작하기
+        </button>
+      </div>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '20px' }}>
+        * 이름은 전체 데이터 초기화 시에만 바꿀 수 있습니다.
+      </p>
+    </div>
+  );
+};
+
+const ManagementMode = ({ progress, onReset, onSetLevel, onJump, onFullReset }: any) => {
   return (
     <div className="fade-in">
       <div className="card">
@@ -420,8 +478,8 @@ const ManagementMode = ({ progress, onReset, onSetLevel, onJump }: any) => {
               className="btn"
               style={{ backgroundColor: 'var(--danger)', color: 'white', fontSize: '14px' }}
               onClick={() => {
-                if (window.confirm('정말로 모든 학습 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-                  onReset();
+                if (window.confirm('정말로 모든 학습 데이터를 초기화하시겠습니까? 사용자 이름과 설정을 포함한 모든 기록이 삭제되며 되돌릴 수 없습니다.')) {
+                  onFullReset();
                 }
               }}
             >
@@ -436,7 +494,7 @@ const ManagementMode = ({ progress, onReset, onSetLevel, onJump }: any) => {
 
 function App() {
   const [mode, setMode] = useState<'learn' | 'quiz' | 'manage'>('manage');
-  const { progress, getTodayWords, completeStudy, addWeakness, resetProgress, setLevel, getCurrentDate, isStudyDay } = useStudy();
+  const { progress, getTodayWords, completeStudy, addWeakness, resetProgress, setLevel, updateUserName, fullReset, getCurrentDate, isStudyDay } = useStudy();
 
   // Track which day is currently being viewed/studied
   const [activeDay, setActiveDay] = useState(progress.currentStudyDay);
@@ -448,6 +506,19 @@ function App() {
 
   const todayData = getTodayWords(activeDay);
   const currentDate = getCurrentDate();
+
+  const isNewUser = progress.settings.userName === '학생' &&
+    !progress.levels['8급'].dailyQuests.length &&
+    !progress.levels['7급A'].dailyQuests.length &&
+    !progress.levels['7급B'].dailyQuests.length;
+
+  if (isNewUser) {
+    return (
+      <div className="app-container">
+        <SetupMode onComplete={(name: string) => updateUserName(name)} />
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
@@ -519,6 +590,7 @@ function App() {
               setActiveDay(day);
               setMode('learn');
             }}
+            onFullReset={fullReset}
           />
         )}
       </main>
