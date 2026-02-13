@@ -364,10 +364,13 @@ const ManagementMode = ({ progress, onReset, onSetLevel, onJump }: any) => {
             if (quest) {
               bg = quest.learned && quest.quizDone ? 'var(--primary)' : '#e2e8f0';
               color = quest.learned && quest.quizDone ? 'white' : 'var(--text-main)';
-            } else if (isCurrent) {
-              bg = '#fff';
-              border = '2px solid var(--primary)';
-              color = 'var(--primary)';
+            }
+
+            // Prioritize current day marker regardless of quest status
+            if (isCurrent) {
+              bg = quest && quest.learned && quest.quizDone ? 'var(--primary)' : '#fff';
+              color = quest && quest.learned && quest.quizDone ? 'white' : 'var(--primary)';
+              border = '3px solid var(--primary)';
             }
 
             const isAvailable = isCurrent || !!quest;
@@ -462,8 +465,8 @@ function App() {
       </header>
 
       <nav className="top-nav">
-        <div className={`nav-tab ${mode === 'learn' ? 'active' : ''}`} onClick={() => setMode('learn')}>학습</div>
-        <div className={`nav-tab ${mode === 'quiz' ? 'active' : ''}`} onClick={() => setMode('quiz')}>퀴즈</div>
+        <div className={`nav-tab ${mode === 'learn' ? 'active' : ''}`} onClick={() => { setActiveDay(progress.currentStudyDay); setMode('learn'); }}>학습</div>
+        <div className={`nav-tab ${mode === 'quiz' ? 'active' : ''}`} onClick={() => { setActiveDay(progress.currentStudyDay); setMode('quiz'); }}>퀴즈</div>
         <div className={`nav-tab ${mode === 'manage' ? 'active' : ''}`} onClick={() => setMode('manage')}>관리</div>
       </nav>
 
