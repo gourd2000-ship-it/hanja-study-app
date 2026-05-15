@@ -120,3 +120,57 @@ describe('useStudy Hook - Level Transition Tests', () => {
         expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('모든 급수 과정을 완료'));
     });
 });
+
+describe('useStudy Hook - Data Migration & Safety Tests', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        vi.clearAllMocks();
+    });
+
+    it('should migrate legacy data (missing 6급 levels) and initialize them', () => {
+        // Mock legacy data without 6급 levels
+        const legacyData = {
+            levels: {
+                '8급': { dailyQuests: [], currentStudyDay: 1, weakHanjaIds: [] },
+                '7급A': { dailyQuests: [], currentStudyDay: 1, weakHanjaIds: [] },
+                '7급B': { dailyQuests: [], currentStudyDay: 1, weakHanjaIds: [] }
+            },
+            settings: { dailyCount: 5, studyDays: [], userName: '레거시' },
+            selectedLevel: '8급'
+        };
+        localStorage.setItem('hanja_maro_v4', JSON.stringify(legacyData));
+
+        const { result } = renderHook(() => useStudy());
+
+        // Verify that 6급 levels are automatically created
+        expect(result.current.progress.levels).toHaveProperty('6급A');
+        expect(result.current.progress.levels).toHaveProperty('6급B');
+        expect(result.current.progress.levels).toHaveProperty('6급C');
+        expect(result.current.progress.settings.userName).toBe('레거시');
+    });
+
+    it('should handle undefined level data gracefully without crashing', () => {
+        // Scenario: selectedLevel is set to a level that somehow doesn't exist in progress.levels
+        act(() => {
+            const corruptedData = {
+                levels: {
+                    '8급': { dailyQuests: [], currentStudyDay: 1, weakHanjaIds: [] }
+                },
+                settings: { dailyCount: 5, studyDays: [], userName: '에러테스트' },
+                selectedLevel: '6급A' // 6급A data is missing in 'levels'
+            };
+            localStorage.setItem('hanja_maro_v4', JSON.stringify(corruptedData));
+        });
+
+        // This should not throw an error because of the migration logic in useEffect
+        // and defensive checks in getCurrentLevelData
+        const { result } = renderHook(() => useStudy());
+
+        expect(result.current.progress.selectedLevel).toBe('6급A');
+        // Migration should have fixed it
+        expect(result.current.progress.levels).toHaveProperty('6급A');
+        
+        // Check that it doesn't crash and returns empty quests for missing data
+        expect(result.current.progress.dailyQuests).toEqual([]);
+    });
+});
