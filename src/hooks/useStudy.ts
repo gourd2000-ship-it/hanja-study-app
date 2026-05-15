@@ -86,11 +86,9 @@ export const useStudy = () => {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 // 마이그레이션: 기존 데이터에 새로운 급수가 없는 경우 추가
-                let migrated = false;
                 LEVEL_SEQUENCE.forEach(lv => {
                     if (!parsed.levels[lv]) {
                         parsed.levels[lv] = createLevelTemplate();
-                        migrated = true;
                     }
                 });
                 return parsed;
