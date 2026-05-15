@@ -508,9 +508,7 @@ function App() {
   const currentDate = getCurrentDate();
 
   const isNewUser = progress.settings.userName === '학생' &&
-    !progress.levels['8급'].dailyQuests.length &&
-    !progress.levels['7급A'].dailyQuests.length &&
-    !progress.levels['7급B'].dailyQuests.length;
+    Object.values(progress.levels).every((lv: any) => lv.dailyQuests.length === 0);
 
   if (isNewUser) {
     return (

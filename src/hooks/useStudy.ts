@@ -64,43 +64,40 @@ const createLevelTemplate = (): LevelProgress => ({
 
 export const useStudy = () => {
     const [progress, setProgress] = useState<UserProgress>(() => {
+        const defaultState: UserProgress = {
+            levels: {
+                '8급': createLevelTemplate(),
+                '7급A': createLevelTemplate(),
+                '7급B': createLevelTemplate(),
+                '6급A': createLevelTemplate(),
+                '6급B': createLevelTemplate(),
+                '6급C': createLevelTemplate()
+            },
+            settings: {
+                dailyCount: 5,
+                studyDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                userName: '학생',
+            },
+            selectedLevel: '8급'
+        };
+
         try {
             const saved = localStorage.getItem('hanja_maro_v4');
-            if (saved) return JSON.parse(saved);
-
-            return {
-                levels: {
-                    '8급': createLevelTemplate(),
-                    '7급A': createLevelTemplate(),
-                    '7급B': createLevelTemplate(),
-                    '6급A': createLevelTemplate(),
-                    '6급B': createLevelTemplate(),
-                    '6급C': createLevelTemplate()
-                },
-                settings: {
-                    dailyCount: 5,
-                    studyDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-                    userName: '학생',
-                },
-                selectedLevel: '8급'
-            };
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // 마이그레이션: 기존 데이터에 새로운 급수가 없는 경우 추가
+                let migrated = false;
+                LEVEL_SEQUENCE.forEach(lv => {
+                    if (!parsed.levels[lv]) {
+                        parsed.levels[lv] = createLevelTemplate();
+                        migrated = true;
+                    }
+                });
+                return parsed;
+            }
+            return defaultState;
         } catch (e) {
-            return {
-                levels: {
-                    '8급': createLevelTemplate(),
-                    '7급A': createLevelTemplate(),
-                    '7급B': createLevelTemplate(),
-                    '6급A': createLevelTemplate(),
-                    '6급B': createLevelTemplate(),
-                    '6급C': createLevelTemplate()
-                },
-                settings: {
-                    dailyCount: 5,
-                    studyDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-                    userName: '학생',
-                },
-                selectedLevel: '8급'
-            };
+            return defaultState;
         }
     });
 
@@ -108,7 +105,10 @@ export const useStudy = () => {
         localStorage.setItem('hanja_maro_v4', JSON.stringify(progress));
     }, [progress]);
 
-    const getCurrentLevelData = () => progress.levels[progress.selectedLevel];
+    const getCurrentLevelData = () => {
+        // 급수 데이터가 없는 경우를 대비한 안전 장치
+        return progress.levels[progress.selectedLevel] || createLevelTemplate();
+    };
 
     const getCurrentDate = () => {
         return new Date();
