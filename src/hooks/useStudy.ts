@@ -14,16 +14,19 @@ const STUDY_SCHEDULE = [
     { day: 9, new: 3, review: 10, extra: 0 }, // G7 + G5 + G2
     { day: 10, new: 3, review: 10, extra: 0 }, // G8 + G6 + G3
     { day: 11, new: 3, review: 10, extra: 0 }, // G9 + G7 + G4
-    { day: 12, new: 3, review: 9, extra: 0 }, // G10 + G8 + G5
-    { day: 13, new: 3, review: 9, extra: 0 }, // G11 + G9 + G6
-    { day: 14, new: 3, review: 9, extra: 0 }, // G12 + G10 + G7
-    { day: 15, new: 3, review: 9, extra: 0 }, // G13 + G11 + G8
+    { day: 12, new: 3, review: 9, extra: 0 }, // G10 + 연수 + G5
+    { day: 13, new: 3, review: 9, extra: 0 }, 
+    { day: 14, new: 3, review: 9, extra: 0 },
+    { day: 15, new: 3, review: 9, extra: 0 },
     { day: 16, new: 0, review: 20, extra: 0 }, // reinforcement
     { day: 17, new: 0, review: 20, extra: 0 },
     { day: 18, new: 0, review: 30, extra: 0 },
     { day: 19, new: 0, review: 30, extra: 0 },
     { day: 20, new: 0, review: 30, extra: 0 },
 ];
+
+const LEVEL_SEQUENCE: ('8급' | '7급A' | '7급B' | '6급A' | '6급B' | '6급C')[] = ['8급', '7급A', '7급B', '6급A', '6급B', '6급C'];
+
 
 interface LevelProgress {
     dailyQuests: {
@@ -41,13 +44,16 @@ interface UserProgress {
         '8급': LevelProgress;
         '7급A': LevelProgress;
         '7급B': LevelProgress;
+        '6급A': LevelProgress;
+        '6급B': LevelProgress;
+        '6급C': LevelProgress;
     };
     settings: {
         dailyCount: number;
         studyDays: string[];
         userName: string;
     };
-    selectedLevel: '8급' | '7급A' | '7급B';
+    selectedLevel: '8급' | '7급A' | '7급B' | '6급A' | '6급B' | '6급C';
 }
 
 const createLevelTemplate = (): LevelProgress => ({
@@ -66,7 +72,10 @@ export const useStudy = () => {
                 levels: {
                     '8급': createLevelTemplate(),
                     '7급A': createLevelTemplate(),
-                    '7급B': createLevelTemplate()
+                    '7급B': createLevelTemplate(),
+                    '6급A': createLevelTemplate(),
+                    '6급B': createLevelTemplate(),
+                    '6급C': createLevelTemplate()
                 },
                 settings: {
                     dailyCount: 5,
@@ -80,7 +89,10 @@ export const useStudy = () => {
                 levels: {
                     '8급': createLevelTemplate(),
                     '7급A': createLevelTemplate(),
-                    '7급B': createLevelTemplate()
+                    '7급B': createLevelTemplate(),
+                    '6급A': createLevelTemplate(),
+                    '6급B': createLevelTemplate(),
+                    '6급C': createLevelTemplate()
                 },
                 settings: {
                     dailyCount: 5,
@@ -117,6 +129,9 @@ export const useStudy = () => {
         if (progress.selectedLevel === '8급') levelHanja = hanjaData.slice(0, 50);
         else if (progress.selectedLevel === '7급A') levelHanja = hanjaData.slice(50, 100);
         else if (progress.selectedLevel === '7급B') levelHanja = hanjaData.slice(100, 150);
+        else if (progress.selectedLevel === '6급A') levelHanja = hanjaData.slice(150, 200);
+        else if (progress.selectedLevel === '6급B') levelHanja = hanjaData.slice(200, 250);
+        else if (progress.selectedLevel === '6급C') levelHanja = hanjaData.slice(250, 300);
 
         let offset = 0;
         for (let i = 0; i < studyDay - 1; i++) {
@@ -187,17 +202,38 @@ export const useStudy = () => {
             const targetQuest = newQuests.find(q => q.studyDay === studyDay);
             const shouldAdvance = targetQuest?.learned && targetQuest?.quizDone;
 
+            let nextDay = progressDay;
+            let nextLevel = currentLv;
+
+            if (shouldAdvance && studyDay === progressDay) {
+                if (progressDay < 20) {
+                    nextDay = progressDay + 1;
+                } else {
+                    // Day 20 is done, move to next level
+                    const currentIndex = LEVEL_SEQUENCE.indexOf(currentLv);
+                    if (currentIndex < LEVEL_SEQUENCE.length - 1) {
+                        nextLevel = LEVEL_SEQUENCE[currentIndex + 1];
+                        nextDay = 1;
+                        alert(`축하합니다! ${currentLv} 과정을 모두 마쳤습니다. 다음 단계인 ${nextLevel}을 시작합니다!`);
+                    } else {
+                        alert(`축하합니다! 모든 급수 과정을 완료하셨습니다!`);
+                    }
+                }
+            }
+
             return {
                 ...prev,
+                selectedLevel: nextLevel,
                 levels: {
                     ...prev.levels,
                     [currentLv]: {
                         ...lvData,
                         dailyQuests: newQuests,
-                        currentStudyDay: (shouldAdvance && studyDay === progressDay) ? Math.min(20, progressDay + 1) : progressDay
+                        currentStudyDay: nextDay
                     }
                 }
             };
+
         });
     };
 
@@ -220,7 +256,7 @@ export const useStudy = () => {
         });
     };
 
-    const resetProgress = (level?: '8급' | '7급A' | '7급B') => {
+    const resetProgress = (level?: '8급' | '7급A' | '7급B' | '6급A' | '6급B' | '6급C') => {
         const targetLevel = level || progress.selectedLevel;
         setProgress(prev => ({
             ...prev,
@@ -231,7 +267,7 @@ export const useStudy = () => {
         }));
     };
 
-    const setLevel = (level: '8급' | '7급A' | '7급B') => {
+    const setLevel = (level: '8급' | '7급A' | '7급B' | '6급A' | '6급B' | '6급C') => {
         setProgress(prev => ({
             ...prev,
             selectedLevel: level
@@ -253,7 +289,10 @@ export const useStudy = () => {
             levels: {
                 '8급': createLevelTemplate(),
                 '7급A': createLevelTemplate(),
-                '7급B': createLevelTemplate()
+                '7급B': createLevelTemplate(),
+                '6급A': createLevelTemplate(),
+                '6급B': createLevelTemplate(),
+                '6급C': createLevelTemplate()
             },
             settings: {
                 dailyCount: 5,

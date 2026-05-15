@@ -385,8 +385,8 @@ const ManagementMode = ({ progress, onSetLevel, onJump, onFullReset }: any) => {
       <div className="card">
         <h3>🎯 급수 선택</h3>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '15px' }}>급수를 선택하면 해당 급수의 1일차부터 다시 시작됩니다.</p>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {['8급', '7급A', '7급B'].map((lv) => (
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {['8급', '7급A', '7급B', '6급A', '6급B', '6급C'].map((lv) => (
             <button
               key={lv}
               className="btn"
